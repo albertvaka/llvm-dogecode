@@ -96,7 +96,7 @@ expr : ident TEQUAL expr { $$ = new NAssignment(*$<ident>1, *$3); }
 	 | ident TLPAREN call_args TRPAREN { $$ = new NMethodCall(*$1, *$3); delete $3; }
 	 | ident { $<ident>$ = $1; }
 	 | numeric
-     | TSTRING { $$ = new NString(*$1); delete $1; }
+     | TSTRING { $$ = new NString(*$1); delete $1;  /*aixo es codi C++, el $1 es de tipus *std::string i m'ho dona el lexer */ }
          | expr TMUL expr { $$ = new NBinaryOperator(*$1, $2, *$3); }
          | expr TDIV expr { $$ = new NBinaryOperator(*$1, $2, *$3); }
          | expr TPLUS expr { $$ = new NBinaryOperator(*$1, $2, *$3); }
