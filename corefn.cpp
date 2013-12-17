@@ -2,13 +2,41 @@
 #include "codegen.h"
 #include "node.h"
 
-using namespace std;
+extern "C" int wow();
 
-extern int yyparse();
-extern NBlock* programBlock;
+llvm::Function* insertWowFunction(CodeGenContext& context)
+{
+    llvm::FunctionType* type =
+    llvm::FunctionType::get(
+        llvm::Type::getInt32Ty(getGlobalContext()), false);
 
+    llvm::Function *func = llvm::Function::Create(
+        type, llvm::Function::ExternalLinkage,
+        llvm::Twine("wow"),
+                                                  context.module
+    );
+    func->setCallingConv(llvm::CallingConv::C);
+    return func;
+}
 
-llvm::Function* createPrintfFunction(CodeGenContext& context)
+llvm::Function* insertPlzFunction(CodeGenContext& context)
+{
+    std::vector<llvm::Type*> args;
+    args.push_back(llvm::Type::getInt8PtrTy(getGlobalContext())); //char*
+
+    llvm::FunctionType* printf_type =
+    llvm::FunctionType::get(llvm::Type::getVoidTy(getGlobalContext()), args, false);
+
+    llvm::Function *func = llvm::Function::Create(
+        printf_type, llvm::Function::ExternalLinkage,
+        llvm::Twine("plz"),
+                                                  context.module
+    );
+    func->setCallingConv(llvm::CallingConv::C);
+    return func;
+}
+
+llvm::Function* insertPrintfFunction(CodeGenContext& context)
 {
     std::vector<llvm::Type*> printf_arg_types;
     printf_arg_types.push_back(llvm::Type::getInt8PtrTy(getGlobalContext())); //char*
@@ -26,7 +54,8 @@ llvm::Function* createPrintfFunction(CodeGenContext& context)
     return func;
 }
 
-void createEchoFunction(CodeGenContext& context, llvm::Function* printfFn)
+
+void createSuchFunction(CodeGenContext& context, llvm::Function* printfFn)
 {
     std::vector<llvm::Type*> echo_arg_types;
     echo_arg_types.push_back(llvm::Type::getInt64Ty(getGlobalContext()));
@@ -37,13 +66,13 @@ void createEchoFunction(CodeGenContext& context, llvm::Function* printfFn)
 
     llvm::Function *func = llvm::Function::Create(
                 echo_type, llvm::Function::InternalLinkage,
-                llvm::Twine("echo"),
+                llvm::Twine("such"),
                 context.module
            );
     llvm::BasicBlock *bblock = llvm::BasicBlock::Create(getGlobalContext(), "entry", func, 0);
 	context.pushBlock(bblock);
-    
-    const char *constValue = "%d\n";
+
+    const char *constValue = "Such %d\n";
     llvm::Constant *format_const = llvm::ConstantDataArray::getString(getGlobalContext(), constValue);
     llvm::GlobalVariable *var =
         new llvm::GlobalVariable(
@@ -55,8 +84,7 @@ void createEchoFunction(CodeGenContext& context, llvm::Function* printfFn)
     std::vector<llvm::Constant*> indices;
     indices.push_back(zero);
     indices.push_back(zero);
-    llvm::Constant *var_ref =
-        llvm::ConstantExpr::getGetElementPtr(var, indices);
+    llvm::Constant *var_ref = llvm::ConstantExpr::getGetElementPtr(var, indices);
 
     std::vector<Value*> args;
     args.push_back(var_ref);
@@ -65,13 +93,19 @@ void createEchoFunction(CodeGenContext& context, llvm::Function* printfFn)
     Value* toPrint = argsValues++;
     toPrint->setName("toPrint");
     args.push_back(toPrint);
-    
+
 	CallInst *call = CallInst::Create(printfFn, makeArrayRef(args), "", bblock);
 	ReturnInst::Create(getGlobalContext(), bblock);
 	context.popBlock();
 }
 
 void createCoreFunctions(CodeGenContext& context){
-	llvm::Function* printfFn = createPrintfFunction(context);
-    createEchoFunction(context, printfFn);
+    insertWowFunction(context);
+    insertPlzFunction(context);
+    llvm::Function* printfFn = insertPrintfFunction(context);
+    if (!printfFn) {
+        std::cout << "Error" << std::endl;
+        wow(); //We can actually use it here xD
+    }
+    createSuchFunction(context, printfFn);
 }

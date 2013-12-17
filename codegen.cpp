@@ -43,10 +43,10 @@ GenericValue CodeGenContext::runCode() {
 /* Returns an LLVM type based on the identifier */
 static Type *typeOf(const NIdentifier& type) 
 {
-	if (type.name.compare("int") == 0) {
+	if (type.name.compare("namber") == 0) {
 		return Type::getInt64Ty(getGlobalContext());
 	}
-	else if (type.name.compare("double") == 0) {
+	else if (type.name.compare("precission") == 0) {
 		return Type::getDoubleTy(getGlobalContext());
 	}
 	return Type::getVoidTy(getGlobalContext());
@@ -64,6 +64,27 @@ Value* NDouble::codeGen(CodeGenContext& context)
 {
 	std::cout << "Creating double: " << value << endl;
 	return ConstantFP::get(Type::getDoubleTy(getGlobalContext()), value);
+}
+
+Value* NString::codeGen(CodeGenContext& context)
+{
+    std::cout << "Creating string: " << value << endl;
+
+    value = value.substr(1,value.size()-2);
+    llvm::Constant *format_const = llvm::ConstantDataArray::getString(getGlobalContext(), value.c_str());
+    llvm::GlobalVariable *var = new llvm::GlobalVariable(
+        *context.module, llvm::ArrayType::get(llvm::IntegerType::get(getGlobalContext(), 8), strlen(value.c_str())+1),
+                             true, llvm::GlobalValue::PrivateLinkage, format_const, ".str");
+
+    llvm::Constant *zero = llvm::Constant::getNullValue(llvm::IntegerType::getInt32Ty(getGlobalContext()));
+
+    std::vector<llvm::Constant*> indices;
+    indices.push_back(zero);
+    indices.push_back(zero);
+    llvm::Constant *var_ref = llvm::ConstantExpr::getGetElementPtr(var, indices);
+
+    return var_ref;
+
 }
 
 Value* NIdentifier::codeGen(CodeGenContext& context)
@@ -101,7 +122,7 @@ Value* NBinaryOperator::codeGen(CodeGenContext& context)
 		case TMINUS: 	instr = Instruction::Sub; goto math;
 		case TMUL: 		instr = Instruction::Mul; goto math;
 		case TDIV: 		instr = Instruction::SDiv; goto math;
-				
+
 		/* TODO comparison */
 	}
 

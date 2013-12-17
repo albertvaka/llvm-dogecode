@@ -26,11 +26,12 @@
    match our tokens.l lex file. We also define the node type
    they represent.
  */
-%token <string> TIDENTIFIER TINTEGER TDOUBLE
+%token <string> TIDENTIFIER TINTEGER TDOUBLE TSTRING
 %token <token> TCEQ TCNE TCLT TCLE TCGT TCGE TEQUAL
 %token <token> TLPAREN TRPAREN TLBRACE TRBRACE TCOMMA TDOT
 %token <token> TPLUS TMINUS TMUL TDIV
 %token <token> TRETURN
+%token <token> TIF
 
 /* Define the type of node our nonterminal symbols represent.
    The types refer to the %union declaration above. Ex: when
@@ -38,7 +39,7 @@
    calling an (NIdentifier*). It makes the compiler happy.
  */
 %type <ident> ident
-%type <expr> numeric expr 
+%type <expr> numeric expr
 %type <varvec> func_decl_args
 %type <exprvec> call_args
 %type <block> program stmts block
@@ -60,8 +61,10 @@ stmts : stmt { $$ = new NBlock(); $$->statements.push_back($<stmt>1); }
 	  | stmts stmt { $1->statements.push_back($<stmt>2); }
 	  ;
 
-stmt : var_decl | func_decl
+stmt : var_decl
+     | func_decl
 	 | expr { $$ = new NExpressionStatement(*$1); }
+     | if_stmt { }
 	 | TRETURN expr { $$ = new NReturnStatement(*$2); }
      ;
 
@@ -88,16 +91,17 @@ ident : TIDENTIFIER { $$ = new NIdentifier(*$1); delete $1; }
 numeric : TINTEGER { $$ = new NInteger(atol($1->c_str())); delete $1; }
 		| TDOUBLE { $$ = new NDouble(atof($1->c_str())); delete $1; }
 		;
-	
+
 expr : ident TEQUAL expr { $$ = new NAssignment(*$<ident>1, *$3); }
 	 | ident TLPAREN call_args TRPAREN { $$ = new NMethodCall(*$1, *$3); delete $3; }
 	 | ident { $<ident>$ = $1; }
 	 | numeric
+     | TSTRING { $$ = new NString(*$1); delete $1; }
          | expr TMUL expr { $$ = new NBinaryOperator(*$1, $2, *$3); }
          | expr TDIV expr { $$ = new NBinaryOperator(*$1, $2, *$3); }
          | expr TPLUS expr { $$ = new NBinaryOperator(*$1, $2, *$3); }
          | expr TMINUS expr { $$ = new NBinaryOperator(*$1, $2, *$3); }
- 	 | expr comparison expr { $$ = new NBinaryOperator(*$1, $2, *$3); }
+     | expr comparison expr { $$ = new NBinaryOperator(*$1, $2, *$3); }
      | TLPAREN expr TRPAREN { $$ = $2; }
 	 ;
 	
@@ -107,5 +111,10 @@ call_args : /*blank*/  { $$ = new ExpressionList(); }
 		  ;
 
 comparison : TCEQ | TCNE | TCLT | TCLE | TCGT | TCGE;
+
+if_stmt : TIF '(' expr ')' block { /* TODO: do stuff when this rule is encountered */ }
+        | TIF '(' expr ')'       { /* TODO: do stuff when this rule is encountered */ }
+        ;
+
 
 %%

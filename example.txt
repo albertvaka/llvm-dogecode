@@ -1,7 +1,8 @@
-int do_math(int a) {
-  int x = a * 5
-  return x + 3
-}
 
-echo(do_math(11))
-echo(do_math(12))
+plz("very hello, such world")
+
+namber n so wow()
+such(n)
+
+n so n*2
+such(n)
