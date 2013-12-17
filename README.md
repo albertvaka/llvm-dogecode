@@ -12,10 +12,17 @@ wow
 Example of currently supported syntax
 -------------------------------------
 
-plz("very hello, such world")
+	plz("very hello, such world")
 
-namber n so wow()
-such(n)
+	namber n so wow()
+	such(n)
 
-n so n*2
-such(n)
+	n so n*2
+	such(n)
+
+Will output:
+
+	very hello, such world
+	Wow: 5 <-- User input
+	Such 5
+	Such 10 
