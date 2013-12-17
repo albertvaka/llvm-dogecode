@@ -29,6 +29,7 @@ libdoge_builtins.so: builtins.c
 	gcc -shared -o $@ -fPIC $<
 
 parser: $(OBJS) libdoge_builtins.so
-	g++ -o $@ $(OBJS) $(LIBS) $(LDFLAGS) -L. -l doge_builtins
+	g++ -o $@ $(OBJS) $(LIBS) $(LDFLAGS) -L. -l doge_builtins -Wl,-rpath,.
+
 
 
